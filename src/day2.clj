@@ -78,3 +78,35 @@
 
 (let [{:keys [horizontal depth]} (travel* instructions)]
   (* horizontal depth))
+
+
+;; P.S.
+
+(defn- parse [instruction-str]
+  (let [[dim-str v-str] (str/split instruction-str #" ")]
+    [dim-str (Integer/parseInt v-str)]))
+
+(parse (first dummy-instructions))
+
+(defn travel' [instructions & part-1?]
+  (let [{:keys [h d]} (reduce
+                        (fn [{:keys [a] :as pos} instruction-str]
+                          (let [[dim-str v] (parse instruction-str)]
+                            (case dim-str 
+                              "forward" (cond-> pos
+                                          (not part-1?) (update :d #(+ % (* a v)))
+                                          :else (update :h + v))
+                              "up" (if part-1?
+                                     (update pos :d - v)
+                                     (update pos :a - v))
+                              "down" (if part-1?
+                                       (update pos :d + v)
+                                       (update pos :a + v)))))
+                        {:h 0
+                         :d 0
+                         :a 0}
+                        instructions)]
+    (* h d)))
+
+(travel' instructions true)
+(travel' instructions)
