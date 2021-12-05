@@ -14,6 +14,11 @@
                    "0,0 -> 8,8"
                    "5,5 -> 8,2"))
 
+(def input (read-string-seq "day5"))
+
+
+;; Part 1
+
 (defn- parse-input
   "Returns a list of pairs of [x y] coordinates, i.e. line segments."
   [input]
@@ -86,7 +91,46 @@
         danger-count)))
 
 (part-1 dummy-input) ; => 5
-
-(def input (read-string-seq "day5"))
-
 (part-1 input) ; => 7142
+
+
+;; Part 2
+
+(defn- h&v&d-lines [line-segments]
+  (prn "h&v&d-lines")
+  (time
+    (filter (fn [[[x1 y1] [x2 y2]]]
+              (or (= x1 x2)
+                  (= y1 y2)
+                  (= (Math/abs (- x2 x1)) (Math/abs (- y2 y1)))))
+            line-segments)))
+
+(defn- h&v&d-points [line-segments]
+  (prn "h&v&d-points")
+  (time
+    (mapcat
+      (fn [[p1 p2]]
+        (let [[[x1 y1] [x2 y2]] (sort [p1 p2])
+              diagonal? (= (Math/abs (- x2 x1)) (Math/abs (- y2 y1))) ]
+          (if diagonal?
+            (map (fn [x y] [x y])
+                 (range x1 (inc x2))
+                 (if (< y1 y2)
+                   (range y1 (inc y2))
+                   (range y1 (dec y2) -1)))  
+            (for [x (if (= x1 x2) [x1] (range x1 (inc x2)))
+                  y (if (= y1 y2) [y1] (range y1 (inc y2)))]
+              [x y]))))
+      line-segments)))
+
+(defn part-2 [input]
+  (time
+    (-> input
+        parse-input
+        h&v&d-lines
+        h&v&d-points
+        point-freqs
+        danger-count)))
+
+(part-2 dummy-input) ; => 12
+(part-2 input) ; => 20012
