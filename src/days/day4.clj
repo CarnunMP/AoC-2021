@@ -118,30 +118,35 @@
   (winning-board? [0 #{[0 0] [1 0] [2 0] [3 0] [4 0]}]) ; => [0 #{[0 0] [1 0] [3 0] [2 0] [4 0]}]
   (winning-board? [0 #{[0 1] [0 2] [0 3] [0 4]}])) ; => nil
 
-(defn get-winning-board-id+positions [{:keys [draws draw->board-id->position] :as m}]
+(defn get-winning-board-ids+positions [{:keys [draws draw->board-id->position boards] :as m} & {:keys [part] :or {part 1}}]
   (reduce
-    (fn [{:keys [drawn board-id->positions] :as acc} draw]
-      (let [board-id->positions (merge-with set/union board-id->positions (set (get draw->board-id->position draw)))
-            [winning-id winning-positions] (when (<= 5 (count drawn))
-                                             (some winning-board? board-id->positions))
+    (fn [{:keys [drawn winning-board-ids board-id->positions] :as acc} draw]
+      (let [board-id->positions (apply dissoc (merge-with set/union board-id->positions (set (get draw->board-id->position draw)))
+                                       (flatten winning-board-ids))
+            winning-ids-and-positions (when (<= 5 (count drawn))
+                                             (filter winning-board? board-id->positions))
             acc (cond-> acc
                   true (update :drawn conj draw)
                   true (assoc :board-id->positions board-id->positions)
-                  winning-id (assoc :winning-board-id winning-id)
-                  winning-positions (assoc :winning-positions winning-positions))]
-        (if winning-id
+                  (seq winning-ids-and-positions) (update :winning-board-ids conj (map first winning-ids-and-positions))
+                  (seq winning-ids-and-positions) (update :winning-positions merge (into {} winning-ids-and-positions)))]
+        (if (or (and (= 1 part) (seq winning-ids-and-positions))
+                (and (= 2 part) (or (= (count (flatten (:winning-board-ids acc))) (count boards))
+                                    (= (count (:drawn acc)) (count draws)))))
           (reduced (merge m acc))
           acc)))
     {:drawn []
-     :winning-board-id nil
+     :winning-board-ids []
+     :winning-positions {}
      :board-id->positions {}}
     draws))
 
-(defn score [{:keys [boards drawn winning-board-id winning-positions]}]
-  (let [positions (set (for [row (range 5)
+(defn score [{:keys [boards drawn winning-board-ids winning-positions]}]
+  (let [winning-board-id (first (peek winning-board-ids))
+        positions (set (for [row (range 5)
                              col (range 5)]
                          [row col]))
-        unmarked-num-positions (apply disj positions winning-positions)
+        unmarked-num-positions (apply disj positions (get winning-positions winning-board-id))
         sum (reduce
               (fn [score [row col]]
                 (+ score (Integer/parseInt (-> boards
@@ -155,13 +160,13 @@
 (comment
   (def a (update (assoc-draw->board-id->position (parse-input dummy-input))
                  :draws #(->> % (take 11) vec)))
-  (get-winning-board-id+positions a)
+  (get-winning-board-ids+positions a)
   ;{:drawn ["7" "4" "9" "5" "11" "17" "23" "2" "0" "14" "21"],
   ; :winning-board-id nil,
   ; :board-id->positions {2 #{[2 2] [0 0] [3 4] [4 1] [1 3] [0 2] [0 4] [3 1] [4 4] [0 1] [4 0]},
   ;                       1 #{[2 2] [1 0] [3 4] [4 1] [1 4] [1 3] [0 3] [2 4] [0 2] [3 1] [4 0]},
   ;                       0 #{[2 2] [1 1] [3 4] [1 3] [0 3] [2 4] [0 2] [2 0] [0 4] [2 1] [1 2]}}}
-  (get-winning-board-id+positions (update a :draws conj "24"))
+  (get-winning-board-ids+positions (update a :draws conj "24"))
   ;{:draws ["7" "4" "9" "5" "11" "17" "23" "2" "0" "14" "21" "24"],
   ; :boards [[["22" "13" "17" "11" "0"] ["8" "2" "23" "4" "24"] ["21" "9" "14" "16" "7"] ["6" "10" "3" "18" "5"] ["1" "12" "20" "15" "19"]]
   ;          [["3" "15" "0" "2" "22"] ["9" "18" "13" "17" "5"] ["19" "8" "7" "25" "23"] ["20" "11" "10" "24" "4"] ["14" "21" "16" "12" "6"]]
@@ -194,24 +199,32 @@
   ;                            "10" {0 #{[3 1]}, 1 #{[3 2]}, 2 #{[1 0]}},
   ;                            "23" {0 #{[1 2]}, 1 #{[2 4]}, 2 #{[2 2]}}},
   ; :drawn ["7" "4" "9" "5" "11" "17" "23" "2" "0" "14" "21" "24"],
-  ; :winning-board-id 2,
+  ; :winning-board-ids [(2)],
+  ; :winning-positions {2 #{[2 2] [0 0] [3 4] [4 1] [1 3] [0 3] [0 2] [0 4] [3 1] [4 4] [0 1] [4 0]}},
   ; :board-id->positions {2 #{[2 2] [0 0] [3 4] [4 1] [1 3] [0 3] [0 2] [0 4] [3 1] [4 4] [0 1] [4 0]},
   ;                       1 #{[2 2] [1 0] [3 3] [3 4] [4 1] [1 4] [1 3] [0 3] [2 4] [0 2] [3 1] [4 0]},
-  ;                       0 #{[2 2] [1 1] [3 4] [1 4] [1 3] [0 3] [2 4] [0 2] [2 0] [0 4] [2 1] [1 2]}},
-  ; :winning-positions #{[2 2] [0 0] [3 4] [4 1] [1 3] [0 3] [0 2] [0 4] [3 1] [4 4] [0 1] [4 0]}}
+  ;                       0 #{[2 2] [1 1] [3 4] [1 4] [1 3] [0 3] [2 4] [0 2] [2 0] [0 4] [2 1] [1 2]}}}
 
   (-> dummy-input
       parse-input
       assoc-draw->board-id->position
-      get-winning-board-id+positions
+      get-winning-board-ids+positions
       score) ; => 4512
   )
 
 (def input (read-string-seq "day4"))
 
-(-> input
-    parse-input
-    assoc-draw->board-id->position
-    get-winning-board-id+positions
-    score
-    )
+(defn result [input & {:keys [part] :or {part 1}}]
+  (-> input
+      parse-input
+      assoc-draw->board-id->position
+      (get-winning-board-ids+positions :part part)
+      score))
+
+(result input)
+
+
+;; Part 2
+
+(result dummy-input :part 2) ; => 1924
+(result input :part 2)
