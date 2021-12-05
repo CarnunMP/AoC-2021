@@ -52,20 +52,21 @@
   (time
     (reduce
       (fn [freq-map point]
-        (merge-with (fn [freq _] (inc freq)) {point 1} freq-map))
+        ;(merge-with (fn [freq _] (inc freq)) {point 1} freq-map) - ah! <small map> <big map> was the problem!
+        (merge-with (fn [freq _] (inc freq)) freq-map {point 1}))
       {}
       points)))
 
-(defn- point-freqs' [points]
-  (prn "point-freqs'")
-  (time
-    (reduce
-      (fn [freq-map p]
-        (if (get freq-map p)
-          (update freq-map p inc)
-          (assoc freq-map p 1)))
-      {}
-      points)))
+;(defn- point-freqs' [points]
+;  (prn "point-freqs'")
+;  (time
+;    (reduce
+;      (fn [freq-map p]
+;        (if (get freq-map p)
+;          (update freq-map p inc)
+;          (assoc freq-map p 1)))
+;      {}
+;      points)))
 
 (defn- danger-count [point-freqs]
   (prn "danger-count")
@@ -81,7 +82,7 @@
         parse-input
         h&v-lines
         h&v-points
-        point-freqs'
+        point-freqs
         danger-count)))
 
 (part-1 dummy-input) ; => 5
