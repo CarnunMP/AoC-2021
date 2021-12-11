@@ -12,5 +12,6 @@
 | [8](src/days/day8.clj) | ugly but fast(ish)! |
 | [9](src/days/day9.clj) | scrappy finish |
 | [10](src/days/day10.clj) | aight |
+| [11](src/days/day11.clj) | noice |
 
 (feedback welcome!)
