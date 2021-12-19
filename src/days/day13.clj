@@ -78,3 +78,33 @@
 
 (part-1 dummy-input) ; => 17
 (part-1 input) ; => 720
+
+
+;; Part 2
+
+(defn display [dots]
+  (let [max-x (apply max (map first dots))
+        max-y (apply max (map second dots))]
+    (->> (for [x (range (inc max-x))
+               y (range (inc max-y))]
+           (if (dots [x y])
+             [[x y] "█"]
+             [[x y] " "]))
+         (group-by (fn [[[_x y] _v]] y))
+         vals
+         (map (fn [row] (map second row)))
+         (map #(apply str %)))))
+
+(defn part-2 [input]
+  (-> input
+      parse-input
+      fold-all
+      display))
+
+(part-2 input)
+;(" ██  █  █ ███  ███  ███   ██  █  █ ████"
+; "█  █ █  █ █  █ █  █ █  █ █  █ █  █    █"
+; "█  █ ████ █  █ █  █ █  █ █  █ █  █   █ "
+; "████ █  █ ███  ███  ███  ████ █  █  █  "
+; "█  █ █  █ █    █ █  █    █  █ █  █ █   "
+; "█  █ █  █ █    █  █ █    █  █  ██  ████")

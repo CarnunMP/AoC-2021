@@ -13,5 +13,7 @@
 | [9](src/days/day9.clj) | scrappy finish |
 | [10](src/days/day10.clj) | aight |
 | [11](src/days/day11.clj) | noice |
+| - | - |
+| [13](src/days/day13.clj) | eh |
 
 (feedback welcome!)
