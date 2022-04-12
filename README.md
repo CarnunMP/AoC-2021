@@ -15,5 +15,6 @@
 | [11](src/days/day11.clj) | noice |
 | [12](src/days/day12.clj) | inelegant |
 | [13](src/days/day13.clj) | eh |
+| [14](src/days/day14.clj) | i'm learning... |
 
 (feedback welcome!)
